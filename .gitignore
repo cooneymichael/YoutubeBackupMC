@@ -1,0 +1,14 @@
+# environment file
+.env
+
+# secrets
+client_secret*
+
+# backups
+*.pkl
+
+# ipython scripts
+*.ipy
+
+# other stuff
+temp.py
