@@ -6,9 +6,17 @@ client_secret*
 
 # backups
 *.pkl
+*~
+\#*\#
+*.bak
 
 # ipython scripts
 *.ipy
 
+# python stuff
+__pycache__/**
+
 # other stuff
 temp.py
+
+
