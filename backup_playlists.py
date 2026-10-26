@@ -7,6 +7,7 @@ descriptions, thumbnails, publish dates, status, etc.).  The URL for a video
 is built from its videoId.
 """
 import os
+from pathlib import Path
 import pickle
 import datetime
 
