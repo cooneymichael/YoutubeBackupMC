@@ -6,16 +6,19 @@ No video files are downloaded, only what the API returns (ids, titles,
 descriptions, thumbnails, publish dates, status, etc.).  The URL for a video
 is built from its videoId.
 """
+import datetime
+from dotenv import load_dotenv
 import os
 from pathlib import Path
 import pickle
-import datetime
 
 import httplib2
 import google_auth_httplib2
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
+
+load_dotenv()
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 scopes = ['https://www.googleapis.com/auth/youtube']
@@ -190,8 +193,15 @@ def main():
     })
 
     # 1. every playlist the user owns
-    playlists = fetch_all(service.playlists().list,
-                          part=PLAYLIST_PARTS, mine=True)
+    try:
+        playlists = fetch_all(service.playlists().list,
+                              part=PLAYLIST_PARTS, mine=True)
+    except (googleapiclient.errors.HttpError, OSError) as e:
+        print(f'  ! could not list playlists: {e}')
+        append_record(OUTPUT_FILE, {'type': 'error', 'playlist_id': None,
+                                    'title': 'playlist list', 'error': str(e)})
+        playlists = []
+
     print(f'Found {len(playlists)} playlists')
 
     # 2. every video in each playlist; each playlist is saved as soon as it is done
@@ -213,7 +223,14 @@ def main():
         print(f'  {title}: {got} videos (saved){note}')
 
     # 3. special playlists (liked videos, uploads), also saved one at a time
-    for name, pid in fetch_special_playlist_ids(service).items():
+    try:
+        special_ids = fetch_special_playlist_ids(service)
+    except (googleapiclient.errors.HttpError, OSError) as e:
+        print(f'  ! could not look up liked/uploads playlists: {e}')
+        append_record(OUTPUT_FILE, {'type': 'error', 'playlist_id': None,
+                                    'title': 'special playlist lookup', 'error': str(e)})
+        special_ids = {}
+    for name, pid in special_ids.items():
         try:
             videos = fetch_playlist_items(service, pid, label=name)
         except (googleapiclient.errors.HttpError, OSError) as e:
